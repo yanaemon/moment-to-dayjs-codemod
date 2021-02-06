@@ -62,6 +62,10 @@ const plugins = [
     name: 'utc',
     properties: ['utc'],
   },
+  {
+    name: 'weekday',
+    properties: ['weekday'],
+  },
 ];
 
 const transform: Transform = (file: FileInfo, api: API) => {
