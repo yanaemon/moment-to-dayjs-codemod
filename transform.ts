@@ -37,7 +37,12 @@ const findProperty = (path: ASTPath<any>, properties: string[]) => {
   return properties.includes(propertyName);
 };
 
-const plugins = [
+type Plugin = {
+  name: string;
+  properties: string[];
+  notImplemented?: boolean;
+};
+const plugins: Plugin[] = [
   {
     name: 'isBetween',
     properties: ['isBetween'],
@@ -57,6 +62,11 @@ const plugins = [
   {
     name: 'minMax',
     properties: ['max', 'min'],
+  },
+  {
+    name: 'updateLocale',
+    properties: ['updateLocale'],
+    notImplemented: true,
   },
   {
     name: 'utc',
@@ -95,6 +105,9 @@ const transform: Transform = (file: FileInfo, api: API) => {
   const checkPlugins = (path: ASTPath<any>) => {
     plugins.forEach((plugin) => {
       if (findProperty(path, plugin.properties)) {
+        if (plugin.notImplemented) {
+          throw new Error('Not implemented plugin found.');
+        }
         foundPlugins.add(plugin.name);
       }
     });
