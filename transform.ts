@@ -47,6 +47,10 @@ const plugins = [
     properties: ['isSameOrAfter'],
   },
   {
+    name: 'isSameOrBefore',
+    properties: ['isSameOrBefore'],
+  },
+  {
     name: 'isoWeek',
     properties: ['isoWeek', 'isoWeekday', 'isoWeekYear'],
   },
