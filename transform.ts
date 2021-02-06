@@ -52,6 +52,13 @@ const plugins = [
       return ['max', 'min'].includes(propertyName)
     },
   },
+  {
+    name: 'utc',
+    find: (path: ASTPath<any>) => {
+      const propertyName = path.node?.callee?.property?.name
+      return ['utc'].includes(propertyName)
+    },
+  },
 ]
 
 const transform: Transform = (file: FileInfo, api: API) => {
