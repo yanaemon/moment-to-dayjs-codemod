@@ -3,12 +3,12 @@ import moment from 'moment';
 const main = () => {
   // parameters
   moment().add({ day: 1 }).toDate();
-  moment().add({ days: 1}).toDate();
+  moment().add({ days: 1 }).toDate();
   moment().add(1, 'day').toDate();
   moment().add(1, 'days').toDate();
-  const num = 1
+  const num = 1;
   moment().add({ day: num }).toDate();
-  const days = 1
+  const days = 1;
   moment().add({ days }).toDate();
 
   // units
@@ -26,6 +26,6 @@ const main = () => {
   moment().add(1, 'minutes').toDate();
   moment().add(1, 'second').toDate();
   moment().add(1, 'seconds').toDate();
-}
+};
 
 main();

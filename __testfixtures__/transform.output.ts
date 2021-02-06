@@ -6,9 +6,9 @@ const main = () => {
   dayjs().add(1, 'day').toDate();
   dayjs().add(1, 'day').toDate();
   dayjs().add(1, 'day').toDate();
-  const num = 1
+  const num = 1;
   dayjs().add(num, 'day').toDate();
-  const days = 1
+  const days = 1;
   dayjs().add(days, 'day').toDate();
 
   // units
@@ -26,6 +26,6 @@ const main = () => {
   dayjs().add(1, 'minute').toDate();
   dayjs().add(1, 'second').toDate();
   dayjs().add(1, 'second').toDate();
-}
+};
 
 main();

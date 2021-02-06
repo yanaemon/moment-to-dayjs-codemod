@@ -1,9 +1,9 @@
-import moment from 'moment'
+import moment from 'moment';
 
 const main = () => {
   moment().isoWeek();
   moment().isoWeekday();
   moment().isoWeekYear();
-}
+};
 
 main();

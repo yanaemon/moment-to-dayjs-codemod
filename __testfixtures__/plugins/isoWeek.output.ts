@@ -6,6 +6,6 @@ const main = () => {
   dayjs().isoWeek();
   dayjs().isoWeekday();
   dayjs().isoWeekYear();
-}
+};
 
 main();
