@@ -39,6 +39,13 @@ const units = [ ...singleUnits, ...multipleUnits ]
 
 const plugins = [
   {
+    name: 'isoWeek',
+    find: (path: ASTPath<any>) => {
+      const propertyName = path.node?.callee?.property?.name
+      return ['isoWeek', 'isoWeekday', 'isoWeekYear'].includes(propertyName)
+    }
+  },
+  {
     name: 'minMax',
     find: (path: ASTPath<any>) => {
       const propertyName = path.node?.callee?.property?.name
@@ -176,7 +183,7 @@ const transform: Transform = (file: FileInfo, api: API) => {
       }
     }
   ).at(-1).get()
-  Array.from(foundPlugins).reverse().forEach(p => {
+  Array.from(foundPlugins).sort().reverse().forEach(p => {
     dImport.insertAfter(j.expressionStatement.from({
       expression: j.callExpression.from({
         callee: j.memberExpression.from({
