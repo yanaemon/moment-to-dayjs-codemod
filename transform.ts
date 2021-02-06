@@ -39,10 +39,23 @@ const findProperty = (path: ASTPath<any>, properties: string[]) => {
 
 type Plugin = {
   name: string;
-  properties: string[];
+  properties?: string[];
+  find?: (path: ASTPath<any>) => boolean;
   notImplemented?: boolean;
 };
 const plugins: Plugin[] = [
+  {
+    name: 'arraySupport',
+    find: (path: ASTPath<any>) => {
+      const callee = path.node?.callee;
+      const args = path.node?.arguments;
+      return (
+        callee?.type?.toString() === 'Identifier' &&
+        callee?.name === 'moment' &&
+        args?.[0]?.type?.toString() === 'ArrayExpression'
+      );
+    },
+  },
   {
     name: 'isBetween',
     properties: ['isBetween'],
@@ -104,7 +117,10 @@ const transform: Transform = (file: FileInfo, api: API) => {
   const foundPlugins = new Set<string>();
   const checkPlugins = (path: ASTPath<any>) => {
     plugins.forEach((plugin) => {
-      if (findProperty(path, plugin.properties)) {
+      if (
+        (plugin.properties && findProperty(path, plugin.properties)) ||
+        plugin?.find?.(path)
+      ) {
         if (plugin.notImplemented) {
           throw new Error('Not implemented plugin found.');
         }

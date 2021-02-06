@@ -5,6 +5,9 @@ defineTest(__dirname, 'transform', null, 'transform', { parser: 'ts' });
 defineTest(__dirname, 'transform', null, 'require', { parser: 'ts' });
 defineTest(__dirname, 'transform', null, 'importBoth', { parser: 'ts' });
 describe('plugins', () => {
+  defineTest(__dirname, 'transform', null, 'plugins/arraySupport', {
+    parser: 'ts',
+  });
   defineTest(__dirname, 'transform', null, 'plugins/isBetween', {
     parser: 'ts',
   });
