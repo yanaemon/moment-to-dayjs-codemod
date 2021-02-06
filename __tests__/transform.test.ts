@@ -19,6 +19,9 @@ describe('plugins', () => {
   });
   defineTest(__dirname, 'transform', null, 'plugins/isoWeek', { parser: 'ts' });
   defineTest(__dirname, 'transform', null, 'plugins/minMax', { parser: 'ts' });
+  defineTest(__dirname, 'transform', null, 'plugins/objectSupport', {
+    parser: 'ts',
+  });
   defineTest(__dirname, 'transform', null, 'plugins/utc', { parser: 'ts' });
   defineTest(__dirname, 'transform', null, 'plugins/weekday', { parser: 'ts' });
 });

@@ -77,6 +77,18 @@ const plugins: Plugin[] = [
     properties: ['max', 'min'],
   },
   {
+    name: 'objectSupport',
+    find: (path: ASTPath<any>) => {
+      const callee = path.node?.callee;
+      const args = path.node?.arguments;
+      return (
+        callee?.type?.toString() === 'Identifier' &&
+        callee?.name === 'moment' &&
+        args?.[0]?.type?.toString() === 'ObjectExpression'
+      );
+    },
+  },
+  {
     name: 'updateLocale',
     properties: ['updateLocale'],
     notImplemented: true,
@@ -176,13 +188,7 @@ const transform: Transform = (file: FileInfo, api: API) => {
     if (type === j.CallExpression.toString()) {
       checkPlugins(path);
 
-      let callee = path.node?.callee;
-      if (
-        callee?.type?.toString() === 'Identifier' &&
-        callee?.name === 'moment'
-      ) {
-        callee = j.identifier('dayjs');
-      }
+      const callee = path.node?.callee;
       const args = path.node?.arguments;
       if (args[0]?.properties?.length > 0) {
         const key = args[0].properties[0].key.name;
@@ -227,7 +233,8 @@ const transform: Transform = (file: FileInfo, api: API) => {
       },
     })
     .replaceWith((path: ASTPath<any>) => {
-      replaceParents(path);
+      checkPlugins(path);
+      replaceParents(path.parentPath);
       return j.callExpression.from({
         ...path.node,
         callee: j.identifier('dayjs'),
@@ -241,6 +248,7 @@ const transform: Transform = (file: FileInfo, api: API) => {
       },
     })
     .replaceWith((path: ASTPath<any>) => {
+      checkPlugins(path);
       return j.callExpression.from({
         ...path.node,
         callee: j.identifier('dayjs'),
