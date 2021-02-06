@@ -37,27 +37,23 @@ const multipleUnits = [
 
 const units = [ ...singleUnits, ...multipleUnits ]
 
+const findProperty = (path: ASTPath<any>, properties: string[]) => {
+  const propertyName = path.node?.callee?.property?.name
+  return properties.includes(propertyName)
+}
+
 const plugins = [
   {
     name: 'isoWeek',
-    find: (path: ASTPath<any>) => {
-      const propertyName = path.node?.callee?.property?.name
-      return ['isoWeek', 'isoWeekday', 'isoWeekYear'].includes(propertyName)
-    }
+    properties: ['isoWeek', 'isoWeekday', 'isoWeekYear'],
   },
   {
     name: 'minMax',
-    find: (path: ASTPath<any>) => {
-      const propertyName = path.node?.callee?.property?.name
-      return ['max', 'min'].includes(propertyName)
-    },
+    properties: ['max', 'min'],
   },
   {
     name: 'utc',
-    find: (path: ASTPath<any>) => {
-      const propertyName = path.node?.callee?.property?.name
-      return ['utc'].includes(propertyName)
-    },
+    properties: ['utc'],
   },
 ]
 
@@ -78,78 +74,74 @@ const transform: Transform = (file: FileInfo, api: API) => {
 
   // before : import moment from 'moment'
   // after  : import * as dayjs from 'dayjs
-  const mImport = root.find(
-    j.ImportDeclaration,
-    {
+  root.find(j.ImportDeclaration, {
       source: {
         value: 'moment',
       }
     }
-  )
-  mImport.replaceWith(() => dayjsImportDeclaration)
+    )
+    .replaceWith(() => dayjsImportDeclaration)
 
   // before : const moment = require('moment')
   // after  : import * as dayjs from 'dayjs'
-  const mRequire = root.find(
-    j.VariableDeclaration
-  ).filter((path: ASTPath<any>) => {
-    const d = path?.node?.declarations?.[0]
-    return d?.init?.callee?.name === 'require' && d?.id?.name === 'moment'
-  })
-  mRequire.replaceWith(() => dayjsImportDeclaration)
+  root.find(j.VariableDeclaration)
+    .filter((path: ASTPath<any>) => {
+      const d = path?.node?.declarations?.[0]
+      return d?.init?.callee?.name === 'require' && d?.id?.name === 'moment'
+    })
+    .replaceWith(() => dayjsImportDeclaration)
 
   // before : moment.xxx()
   // after  : dayjs.xxx()
-  const momentStatics = root.find(j.CallExpression, {
-    callee: {
-      object: { name: 'moment' },
-    },
-  })
-  momentStatics.replaceWith((path: ASTPath<any>) => {
-    plugins.forEach(plugin => {
-      if (plugin.find(path)) {
-        foundPlugins.add(plugin.name)
-      }
+  root.find(j.CallExpression, {
+      callee: {
+        object: { name: 'moment' },
+      },
     })
-    return j.callExpression.from({
-      ...path.node,
-      callee: j.memberExpression.from({
-        ...path.node.callee,
-        object: j.identifier('dayjs'),
-      }),
+    .replaceWith((path: ASTPath<any>) => {
+      plugins.forEach(plugin => {
+        if (findProperty(path, plugin.properties)) {
+          foundPlugins.add(plugin.name)
+        }
+      })
+      return j.callExpression.from({
+        ...path.node,
+        callee: j.memberExpression.from({
+          ...path.node.callee,
+          object: j.identifier('dayjs'),
+        }),
+      })
     })
-  })
 
   // before : moment().xxx({ days: 1 })]
   // after  : dayjs().xxx(1, 'day')
-  const momentVars = root.find(j.CallExpression, {
-    callee: {
-      name: 'moment',
-    },
-  })
   const replaceParents = (path: ASTPath<any>) => {
     const type = path?.value?.type?.toString()
+    let replacement: any = null
     if (type === j.CallExpression.toString()) {
       plugins.forEach(plugin => {
-        if (plugin.find(path)) {
+        if (findProperty(path, plugin.properties)) {
           foundPlugins.add(plugin.name)
         }
       })
 
-      const callee = path.node?.callee
+      let callee = path.node?.callee
+      if (callee?.type?.toString() === 'Identifier' && callee?.name === 'moment') {
+        callee = j.identifier('dayjs')
+      }
       const args = path.node?.arguments
       if (args[0]?.properties?.length > 0) {
         const key = args[0].properties[0].key.name
         const value = args[0].properties[0].value
         if (units.includes(key)) {
-          path.replace(j.callExpression.from({
+          replacement = j.callExpression.from({
             ...path.node,
             callee,
             arguments: [
               value,
               j.literal(toSingle(key)),
             ]
-          }))
+          })
         }
       } else {
         const newArgs: K.ExpressionKind[] = []
@@ -162,25 +154,33 @@ const transform: Transform = (file: FileInfo, api: API) => {
           newArgs.push(includeUnit ? j.literal(toSingle(a.value)) : a)
         })
         if (needReplace) {
-          path.replace(j.callExpression.from({
+          replacement = j.callExpression.from({
             ...path.node,
             callee,
             arguments: newArgs,
-          }))
+          })
         }
       }
     }
     if (path?.parentPath) {
       replaceParents(path.parentPath)
     }
+    if (replacement) {
+      path.replace(replacement)
+    }
   }
-  momentVars.replaceWith(path => {
-    replaceParents(path)
-    return j.callExpression.from({
-      ...path.node,
-      callee: j.identifier('dayjs'),
+  root.find(j.CallExpression, {
+      callee: {
+        name: 'moment',
+      },
     })
-  })
+    .replaceWith((path: ASTPath<any>) => {
+      replaceParents(path)
+      return j.callExpression.from({
+        ...path.node,
+        callee: j.identifier('dayjs'),
+      })
+    })
 
   // plugins
   const dImport = root.find(j.ImportDeclaration,
