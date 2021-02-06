@@ -72,16 +72,33 @@ const transform: Transform = (file: FileInfo, api: API) => {
   const j = api.jscodeshift;
   const root = j(file.source);
 
-  const dayjsImportDeclaration = j.importDeclaration.from({
-    source: j.literal('dayjs'),
-    specifiers: [
-      j.importNamespaceSpecifier.from({
-        local: j.identifier('dayjs'),
-      }),
-    ],
+  const dayjsImport = root.find(j.ImportDeclaration, {
+    source: {
+      value: 'dayjs',
+    },
   });
+  let hasDayjsImport = dayjsImport.nodes().length > 0;
+  const dayjsImportDeclaration = () => {
+    if (hasDayjsImport) return;
+    hasDayjsImport = true;
+    return j.importDeclaration.from({
+      source: j.literal('dayjs'),
+      specifiers: [
+        j.importNamespaceSpecifier.from({
+          local: j.identifier('dayjs'),
+        }),
+      ],
+    });
+  };
 
   const foundPlugins = new Set<string>();
+  const checkPlugins = (path: ASTPath<any>) => {
+    plugins.forEach((plugin) => {
+      if (findProperty(path, plugin.properties)) {
+        foundPlugins.add(plugin.name);
+      }
+    });
+  };
 
   // before : import moment from 'moment'
   // after  : import * as dayjs from 'dayjs
@@ -91,7 +108,7 @@ const transform: Transform = (file: FileInfo, api: API) => {
         value: 'moment',
       },
     })
-    .replaceWith(() => dayjsImportDeclaration);
+    .replaceWith(dayjsImportDeclaration);
 
   // before : const moment = require('moment')
   // after  : import * as dayjs from 'dayjs'
@@ -101,7 +118,7 @@ const transform: Transform = (file: FileInfo, api: API) => {
       const d = path?.node?.declarations?.[0];
       return d?.init?.callee?.name === 'require' && d?.id?.name === 'moment';
     })
-    .replaceWith(() => dayjsImportDeclaration);
+    .replaceWith(dayjsImportDeclaration);
 
   // before : moment.xxx()
   // after  : dayjs.xxx()
@@ -112,11 +129,7 @@ const transform: Transform = (file: FileInfo, api: API) => {
       },
     })
     .replaceWith((path: ASTPath<any>) => {
-      plugins.forEach((plugin) => {
-        if (findProperty(path, plugin.properties)) {
-          foundPlugins.add(plugin.name);
-        }
-      });
+      checkPlugins(path);
       return j.callExpression.from({
         ...path.node,
         callee: j.memberExpression.from({
@@ -132,11 +145,7 @@ const transform: Transform = (file: FileInfo, api: API) => {
     const type = path?.value?.type?.toString();
     let replacement: any = null;
     if (type === j.CallExpression.toString()) {
-      plugins.forEach((plugin) => {
-        if (findProperty(path, plugin.properties)) {
-          foundPlugins.add(plugin.name);
-        }
-      });
+      checkPlugins(path);
 
       let callee = path.node?.callee;
       if (
@@ -210,19 +219,17 @@ const transform: Transform = (file: FileInfo, api: API) => {
     });
 
   // plugins
-  const dImport = root
-    .find(j.ImportDeclaration, {
-      source: {
-        value: 'dayjs',
-      },
-    })
-    .at(-1)
-    .get();
+  const dImports = root.find(j.ImportDeclaration, {
+    source: {
+      value: 'dayjs',
+    },
+  });
+  const dImport = dImports.nodes().length > 0 && dImports.at(-1).get();
   Array.from(foundPlugins)
     .sort()
     .reverse()
     .forEach((p) => {
-      dImport.insertAfter(
+      dImport?.insertAfter(
         j.expressionStatement.from({
           expression: j.callExpression.from({
             callee: j.memberExpression.from({
