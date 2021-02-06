@@ -44,6 +44,10 @@ const findProperty = (path: ASTPath<any>, properties: string[]) => {
 
 const plugins = [
   {
+    name: 'isBetween',
+    properties: ['isBetween'],
+  },
+  {
     name: 'isoWeek',
     properties: ['isoWeek', 'isoWeekday', 'isoWeekYear'],
   },
@@ -176,6 +180,17 @@ const transform: Transform = (file: FileInfo, api: API) => {
     })
     .replaceWith((path: ASTPath<any>) => {
       replaceParents(path)
+      return j.callExpression.from({
+        ...path.node,
+        callee: j.identifier('dayjs'),
+      })
+    })
+  root.find(j.CallExpression, {
+      callee: {
+        name: 'moment',
+      },
+    })
+    .replaceWith((path: ASTPath<any>) => {
       return j.callExpression.from({
         ...path.node,
         callee: j.identifier('dayjs'),
