@@ -43,6 +43,10 @@ const plugins = [
     properties: ['isBetween'],
   },
   {
+    name: 'isSameOrAfter',
+    properties: ['isSameOrAfter'],
+  },
+  {
     name: 'isoWeek',
     properties: ['isoWeek', 'isoWeekday', 'isoWeekYear'],
   },

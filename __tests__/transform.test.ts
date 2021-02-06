@@ -7,6 +7,7 @@ describe('plugins', () => {
   defineTest(__dirname, 'transform', null, 'plugins/isBetween', {
     parser: 'ts',
   });
+  defineTest(__dirname, 'transform', null, 'plugins/isSameOrAfter', { parser: 'ts' });
   defineTest(__dirname, 'transform', null, 'plugins/isoWeek', { parser: 'ts' });
   defineTest(__dirname, 'transform', null, 'plugins/minMax', { parser: 'ts' });
   defineTest(__dirname, 'transform', null, 'plugins/utc', { parser: 'ts' });
