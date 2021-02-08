@@ -1,10 +1,14 @@
 import * as dayjs from 'dayjs';
-import minMax from 'dayjs/plugin/minMax';
-dayjs.extend(minMax);
+import utc from 'dayjs/plugin/utc';
+dayjs.extend(utc);
 
 const main = () => {
-  dayjs.max(dayjs(), dayjs('2018-01-01'), dayjs('2019-01-01'));
-  dayjs.min([dayjs(), dayjs('2018-01-01'), dayjs('2019-01-01')]);
+  dayjs().format();
+  dayjs.utc().format();
+  dayjs().utc().format();
+  dayjs.utc().isUTC();
+  dayjs.utc().local().format();
+  dayjs.utc('2018-01-01', 'YYYY-MM-DD');
 };
 
 main();
