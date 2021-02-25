@@ -180,7 +180,7 @@ const transform: Transform = (file: FileInfo, api: API) => {
       });
     });
 
-  // before : moment().xxx({ days: 1 })]
+  // before : moment().xxx({ days: 1 })
   // after  : dayjs().xxx(1, 'day')
   const replaceParents = (path: ASTPath<any>) => {
     const type = path?.value?.type?.toString();
@@ -287,6 +287,22 @@ const transform: Transform = (file: FileInfo, api: API) => {
           ],
         })
       );
+    });
+
+  // type
+  root
+    .find(j.TSTypeReference, (value) =>
+      [value.typeName?.name || value.typeName?.right.name].some(
+        (name) => name === 'MomentInput'
+      )
+    )
+    .replaceWith(() => {
+      return j.tsTypeReference.from({
+        typeName: j.tsQualifiedName.from({
+          left: j.identifier('dayjs'),
+          right: j.identifier('Dayjs'),
+        }),
+      });
     });
 
   return root.toSource({ quote: 'single' });
