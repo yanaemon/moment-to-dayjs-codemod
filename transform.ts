@@ -292,8 +292,8 @@ const transform: Transform = (file: FileInfo, api: API) => {
   // type
   root
     .find(j.TSTypeReference, (value) =>
-      [value.typeName?.name || value.typeName?.right.name].some(
-        (name) => name === 'MomentInput'
+      [value.typeName?.name || value.typeName?.right.name].some((name) =>
+        ['Moment', 'MomentInput'].includes(name)
       )
     )
     .replaceWith(() => {
