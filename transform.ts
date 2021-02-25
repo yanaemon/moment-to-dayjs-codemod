@@ -193,11 +193,13 @@ const transform: Transform = (file: FileInfo, api: API) => {
       if (args[0]?.properties?.length > 0) {
         const key = args[0].properties[0].key.name;
         const value = args[0].properties[0].value;
+        const newArgs = [value, j.literal(toSingle(key))];
+        const needReverse = findProperty(path, ['set']);
         if (units.includes(key)) {
           replacement = j.callExpression.from({
             ...path.node,
             callee,
-            arguments: [value, j.literal(toSingle(key))],
+            arguments: needReverse ? newArgs.reverse() : newArgs,
           });
         }
       } else {

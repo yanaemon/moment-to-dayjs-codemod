@@ -11,6 +11,12 @@ const main = () => {
   const days = 1;
   moment().add({ days }).toDate();
 
+  // set
+  moment().set({ day: 1 });
+  moment().set({ days: 1 });
+  moment().set('day', 1);
+  moment().set('days', 1);
+
   // units
   moment().add(1, 'year').toDate();
   moment().add(1, 'years').toDate();

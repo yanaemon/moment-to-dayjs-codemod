@@ -11,6 +11,12 @@ const main = () => {
   const days = 1;
   dayjs().add(days, 'day').toDate();
 
+  // set
+  dayjs().set('day', 1);
+  dayjs().set('day', 1);
+  dayjs().set('day', 1);
+  dayjs().set('day', 1);
+
   // units
   dayjs().add(1, 'year').toDate();
   dayjs().add(1, 'year').toDate();
