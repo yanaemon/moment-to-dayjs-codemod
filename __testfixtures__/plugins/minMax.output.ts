@@ -1,4 +1,4 @@
-import * as dayjs from 'dayjs';
+import dayjs from 'dayjs';
 import minMax from 'dayjs/plugin/minMax';
 dayjs.extend(minMax);
 

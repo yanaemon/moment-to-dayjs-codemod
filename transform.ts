@@ -118,11 +118,7 @@ const transform: Transform = (file: FileInfo, api: API) => {
     hasDayjsImport = true;
     return j.importDeclaration.from({
       source: j.literal('dayjs'),
-      specifiers: [
-        j.importNamespaceSpecifier.from({
-          local: j.identifier('dayjs'),
-        }),
-      ],
+      specifiers: [j.importDefaultSpecifier(j.identifier('dayjs'))],
     });
   };
 
