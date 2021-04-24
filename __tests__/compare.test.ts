@@ -102,12 +102,12 @@ dayjs.extend(minMax);
 
 test.each([
   [
-    moment.max(moment(), moment('2018-01-01'), moment('2019-01-01')),
-    dayjs.max(dayjs(), dayjs('2018-01-01'), dayjs('2019-01-01')),
+    moment.max(moment(now), moment('2018-01-01'), moment('2019-01-01')),
+    dayjs.max(dayjs(now), dayjs('2018-01-01'), dayjs('2019-01-01')),
   ],
   [
-    moment.min([moment(), moment('2018-01-01'), moment('2019-01-01')]),
-    dayjs.min([dayjs(), dayjs('2018-01-01'), dayjs('2019-01-01')]),
+    moment.min([moment(now), moment('2018-01-01'), moment('2019-01-01')]),
+    dayjs.min([dayjs(now), dayjs('2018-01-01'), dayjs('2019-01-01')]),
   ],
 ])('minMax %#', (m, d) => {
   expect(d.toDate()).toEqual(m.toDate());
@@ -125,9 +125,9 @@ import utc from 'dayjs/plugin/utc';
 dayjs.extend(utc);
 
 test.each([
-  [moment().format(), dayjs().format()],
+  [moment(now).format(), dayjs(now).format()],
   [moment.utc().format(), dayjs.utc().format()],
-  [moment().utc().format(), dayjs().utc().format()],
+  [moment(now).utc().format(), dayjs(now).utc().format()],
   [moment.utc().isUTC(), dayjs.utc().isUTC()],
   [moment.utc().local().format(), dayjs.utc().local().format()],
   [
