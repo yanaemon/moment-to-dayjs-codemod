@@ -1,9 +1,31 @@
 {
-  "name": "jscodeshift-moment2dayjs",
-  "version": "1.0.0",
-  "main": "index.ts",
-  "author": "Hiroki Shirayanagi <hiroki.shirayanagi@gmail.com>",
+  "name": "moment-to-dayjs-codemod",
+  "version": "0.0.1",
+  "description": "Transforms JS/TS files from moment to dayjs",
+  "main": "transform.ts",
+  "author": {
+    "name": "Hiroki Shirayanagi",
+    "url": "https://github.com/yanaemon"
+  },
   "license": "MIT",
+  "scripts": {
+    "build": "tsc transform.ts",
+    "test": "jest"
+  },
+  "keywords": [
+    "moment",
+    "dayjs",
+    "codemod",
+    "jscodeshift"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yanaemon/moment-to-dayjs-codemod.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yanaemon/moment-to-dayjs-codemod/issues"
+  },
+  "homepage": "https://github.com/yanaemon/moment-to-dayjs-codemod#readme",
   "dependencies": {},
   "devDependencies": {
     "@types/jest": "^26.0.20",
