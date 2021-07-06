@@ -32,8 +32,10 @@ const multipleUnits = [
 
 const units = [...singleUnits, ...multipleUnits];
 
-const findProperty = (path: ASTPath<any>, properties: string[]) => {
-  const propertyName = path.node?.callee?.property?.name;
+const findPropertyName = (path: ASTPath<any>) =>
+  path.node?.callee?.property?.name;
+const includesProperties = (path: ASTPath<any>, properties: string[]) => {
+  const propertyName = findPropertyName(path);
   return properties.includes(propertyName);
 };
 
@@ -126,11 +128,11 @@ const transform: Transform = (file: FileInfo, api: API) => {
   const checkPlugins = (path: ASTPath<any>) => {
     plugins.forEach((plugin) => {
       if (
-        (plugin.properties && findProperty(path, plugin.properties)) ||
+        (plugin.properties && includesProperties(path, plugin.properties)) ||
         plugin?.find?.(path)
       ) {
         if (plugin.notImplemented) {
-          throw new Error('Not implemented plugin found.');
+          throw new Error(`Not implemented plugin '${plugin.name}' found.`);
         }
         foundPlugins.add(plugin.name);
       }
@@ -138,7 +140,7 @@ const transform: Transform = (file: FileInfo, api: API) => {
   };
 
   // before : import moment from 'moment'
-  // after  : import * as dayjs from 'dayjs
+  // after  : import dayjs from 'dayjs
   root
     .find(j.ImportDeclaration, {
       source: {
@@ -148,7 +150,7 @@ const transform: Transform = (file: FileInfo, api: API) => {
     .replaceWith(dayjsImportDeclaration);
 
   // before : const moment = require('moment')
-  // after  : import * as dayjs from 'dayjs'
+  // after  : import dayjs from 'dayjs'
   root
     .find(j.VariableDeclaration)
     .filter((path: ASTPath<any>) => {
@@ -190,7 +192,7 @@ const transform: Transform = (file: FileInfo, api: API) => {
         const key = args[0].properties[0].key.name;
         const value = args[0].properties[0].value;
         const newArgs = [value, j.literal(toSingle(key))];
-        const needReverse = findProperty(path, ['set']);
+        const needReverse = includesProperties(path, ['set']);
         if (units.includes(key)) {
           replacement = j.callExpression.from({
             ...path.node,
@@ -199,8 +201,21 @@ const transform: Transform = (file: FileInfo, api: API) => {
           });
         }
       } else {
-        const newArgs: K.ExpressionKind[] = [];
         let needReplace = false;
+
+        // property
+        let newCallee = callee;
+        const propertyName = findPropertyName(path);
+        if (multipleUnits.includes(propertyName)) {
+          needReplace = true;
+          newCallee = j.memberExpression.from({
+            ...path.node.callee,
+            property: j.identifier(toSingle(propertyName)),
+          });
+        }
+
+        // args
+        const newArgs: K.ExpressionKind[] = [];
         args.forEach((a: any) => {
           const includeUnit = units.includes(a.value);
           if (includeUnit) {
@@ -208,10 +223,11 @@ const transform: Transform = (file: FileInfo, api: API) => {
           }
           newArgs.push(includeUnit ? j.literal(toSingle(a.value)) : a);
         });
+
         if (needReplace) {
           replacement = j.callExpression.from({
             ...path.node,
-            callee,
+            callee: newCallee,
             arguments: newArgs,
           });
         }

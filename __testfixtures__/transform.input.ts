@@ -11,6 +11,22 @@ const main = () => {
   const days = 1;
   moment().add({ days }).toDate();
 
+  // get
+  moment().year();
+  moment().month();
+  moment().day();
+  moment().hour();
+  moment().minute();
+  moment().second();
+
+  // get - plural
+  moment().years();
+  moment().months();
+  moment().days();
+  moment().hours();
+  moment().minutes();
+  moment().seconds();
+
   // set
   moment().set({ day: 1 });
   moment().set({ days: 1 });

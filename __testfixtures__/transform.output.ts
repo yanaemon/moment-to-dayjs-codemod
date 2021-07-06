@@ -11,6 +11,22 @@ const main = () => {
   const days = 1;
   dayjs().add(days, 'day').toDate();
 
+  // get
+  dayjs().year();
+  dayjs().month();
+  dayjs().day();
+  dayjs().hour();
+  dayjs().minute();
+  dayjs().second();
+
+  // get - plural
+  dayjs().year();
+  dayjs().month();
+  dayjs().day();
+  dayjs().hour();
+  dayjs().minute();
+  dayjs().second();
+
   // set
   dayjs().set('day', 1);
   dayjs().set('day', 1);
