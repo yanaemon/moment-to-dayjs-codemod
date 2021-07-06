@@ -1,4 +1,4 @@
-import { API, ASTPath, FileInfo, Transform } from 'jscodeshift';
+import { API, ASTPath, FileInfo, JSCodeshift, Transform } from 'jscodeshift';
 import * as K from 'ast-types/gen/kinds';
 
 /**
@@ -32,11 +32,44 @@ const multipleUnits = [
 
 const units = [...singleUnits, ...multipleUnits];
 
-const findPropertyName = (path: ASTPath<any>) =>
+const getPropertyName = (path: ASTPath<any>) =>
   path.node?.callee?.property?.name;
 const includesProperties = (path: ASTPath<any>, properties: string[]) => {
-  const propertyName = findPropertyName(path);
+  const propertyName = getPropertyName(path);
   return properties.includes(propertyName);
+};
+
+const replaceObjectArgument = (j: JSCodeshift, path: ASTPath<any>) => {
+  const callee = path.node?.callee;
+  const args = path.node?.arguments;
+  if (!args?.length) {
+    return null;
+  }
+
+  const needReplace = args.some((a: any) =>
+    units.includes(a.properties[0].key.name)
+  );
+  if (!needReplace) {
+    return null;
+  }
+
+  const newArgs = args.map((a: any) => {
+    return {
+      ...a,
+      properties: a.properties.map((p: any) => {
+        return {
+          ...p,
+          key: j.identifier(toSingle(p.key.name)),
+        };
+      }),
+    };
+  });
+
+  return j.callExpression.from({
+    ...path.node,
+    callee,
+    arguments: newArgs,
+  });
 };
 
 type Plugin = {
@@ -83,9 +116,16 @@ const plugins: Plugin[] = [
     find: (path: ASTPath<any>) => {
       const callee = path.node?.callee;
       const args = path.node?.arguments;
+      const isMomentConstructor =
+        callee?.type?.toString() === 'Identifier' && callee?.name === 'moment';
+      const isObjectSupportFunction = [
+        'utc',
+        'set',
+        'add',
+        'subtract',
+      ].includes(getPropertyName(path));
       return (
-        callee?.type?.toString() === 'Identifier' &&
-        callee?.name === 'moment' &&
+        (isMomentConstructor || isObjectSupportFunction) &&
         args?.[0]?.type?.toString() === 'ObjectExpression'
       );
     },
@@ -102,6 +142,14 @@ const plugins: Plugin[] = [
   {
     name: 'weekday',
     properties: ['weekday'],
+    find: (path: ASTPath<any>) => {
+      const propertyName = getPropertyName(path);
+      const args = path.node?.arguments;
+      return (
+        ['get', 'set'].includes(propertyName) &&
+        ['weekday', 'weekdays'].includes(args?.[0]?.value)
+      );
+    },
   },
 ];
 
@@ -135,6 +183,7 @@ const transform: Transform = (file: FileInfo, api: API) => {
           throw new Error(`Not implemented plugin '${plugin.name}' found.`);
         }
         foundPlugins.add(plugin.name);
+        return;
       }
     });
   };
@@ -189,23 +238,13 @@ const transform: Transform = (file: FileInfo, api: API) => {
       const callee = path.node?.callee;
       const args = path.node?.arguments;
       if (args[0]?.properties?.length > 0) {
-        const key = args[0].properties[0].key.name;
-        const value = args[0].properties[0].value;
-        const newArgs = [value, j.literal(toSingle(key))];
-        const needReverse = includesProperties(path, ['set']);
-        if (units.includes(key)) {
-          replacement = j.callExpression.from({
-            ...path.node,
-            callee,
-            arguments: needReverse ? newArgs.reverse() : newArgs,
-          });
-        }
+        replacement = replaceObjectArgument(j, path);
       } else {
         let needReplace = false;
 
         // property
         let newCallee = callee;
-        const propertyName = findPropertyName(path);
+        const propertyName = getPropertyName(path);
         if (multipleUnits.includes(propertyName)) {
           needReplace = true;
           newCallee = j.memberExpression.from({

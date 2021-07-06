@@ -4,10 +4,6 @@ const main = () => {
   // parameters
   dayjs().add(1, 'day').toDate();
   dayjs().add(1, 'day').toDate();
-  dayjs().add(1, 'day').toDate();
-  dayjs().add(1, 'day').toDate();
-  const num = 1;
-  dayjs().add(num, 'day').toDate();
   const days = 1;
   dayjs().add(days, 'day').toDate();
 
@@ -28,8 +24,6 @@ const main = () => {
   dayjs().second();
 
   // set
-  dayjs().set('day', 1);
-  dayjs().set('day', 1);
   dayjs().set('day', 1);
   dayjs().set('day', 1);
 

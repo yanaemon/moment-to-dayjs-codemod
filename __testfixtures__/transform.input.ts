@@ -2,14 +2,10 @@ import moment from 'moment';
 
 const main = () => {
   // parameters
-  moment().add({ day: 1 }).toDate();
-  moment().add({ days: 1 }).toDate();
   moment().add(1, 'day').toDate();
   moment().add(1, 'days').toDate();
-  const num = 1;
-  moment().add({ day: num }).toDate();
   const days = 1;
-  moment().add({ days }).toDate();
+  moment().add(days, 'day').toDate();
 
   // get
   moment().year();
@@ -28,8 +24,6 @@ const main = () => {
   moment().seconds();
 
   // set
-  moment().set({ day: 1 });
-  moment().set({ days: 1 });
   moment().set('day', 1);
   moment().set('days', 1);
 
