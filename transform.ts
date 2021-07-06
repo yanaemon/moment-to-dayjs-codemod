@@ -40,9 +40,8 @@ const includesProperties = (path: ASTPath<any>, properties: string[]) => {
 };
 
 const replaceObjectArgument = (j: JSCodeshift, path: ASTPath<any>) => {
-  const callee = path.node?.callee;
   const args = path.node?.arguments;
-  if (!args?.length) {
+  if (!args?.[0]?.properties?.length) {
     return null;
   }
 
@@ -57,9 +56,10 @@ const replaceObjectArgument = (j: JSCodeshift, path: ASTPath<any>) => {
     return {
       ...a,
       properties: a.properties.map((p: any) => {
+        const includeUnit = units.includes(p.key.name);
         return {
           ...p,
-          key: j.identifier(toSingle(p.key.name)),
+          key: includeUnit ? j.identifier(toSingle(p.key.name)) : p.key,
         };
       }),
     };
@@ -67,8 +67,46 @@ const replaceObjectArgument = (j: JSCodeshift, path: ASTPath<any>) => {
 
   return j.callExpression.from({
     ...path.node,
-    callee,
     arguments: newArgs,
+  });
+};
+
+const replaceArrayArugment = (j: JSCodeshift, path: ASTPath<any>) => {
+  const args = path.node?.arguments;
+  if (!args?.length) {
+    return null;
+  }
+
+  const needReplace = args.some((a: any) => units.includes(a.value));
+  if (!needReplace) {
+    return null;
+  }
+
+  const newArgs = args.map((a: any) => {
+    const includeUnit = units.includes(a.value);
+    return includeUnit ? j.literal(toSingle(a.value)) : a;
+  });
+
+  return j.callExpression.from({
+    ...path.node,
+    arguments: newArgs,
+  });
+};
+
+const replaceUnitFunction = (j: JSCodeshift, path: ASTPath<any>) => {
+  const propertyName = getPropertyName(path);
+  if (!multipleUnits.includes(propertyName)) {
+    return null;
+  }
+
+  const newCallee = j.memberExpression.from({
+    ...path.node.callee,
+    property: j.identifier(toSingle(propertyName)),
+  });
+
+  return j.callExpression.from({
+    ...path.node,
+    callee: newCallee,
   });
 };
 
@@ -188,6 +226,7 @@ const transform: Transform = (file: FileInfo, api: API) => {
     });
   };
 
+  // replace import statement
   // before : import moment from 'moment'
   // after  : import dayjs from 'dayjs
   root
@@ -198,6 +237,7 @@ const transform: Transform = (file: FileInfo, api: API) => {
     })
     .replaceWith(dayjsImportDeclaration);
 
+  // replace require statement
   // before : const moment = require('moment')
   // after  : import dayjs from 'dayjs'
   root
@@ -208,6 +248,7 @@ const transform: Transform = (file: FileInfo, api: API) => {
     })
     .replaceWith(dayjsImportDeclaration);
 
+  // replace static function
   // before : moment.xxx()
   // after  : dayjs.xxx()
   root
@@ -227,50 +268,18 @@ const transform: Transform = (file: FileInfo, api: API) => {
       });
     });
 
-  // before : moment().xxx({ days: 1 })
-  // after  : dayjs().xxx(1, 'day')
+  // replace function and arguments
+  // before : moment().xxx(1, 'days') / moment().days()
+  // after  : dayjs().xxx(1, 'day') / dayjs().day()
   const replaceParents = (path: ASTPath<any>) => {
     const type = path?.value?.type?.toString();
     let replacement: any = null;
     if (type === j.CallExpression.toString()) {
       checkPlugins(path);
-
-      const callee = path.node?.callee;
-      const args = path.node?.arguments;
-      if (args[0]?.properties?.length > 0) {
-        replacement = replaceObjectArgument(j, path);
-      } else {
-        let needReplace = false;
-
-        // property
-        let newCallee = callee;
-        const propertyName = getPropertyName(path);
-        if (multipleUnits.includes(propertyName)) {
-          needReplace = true;
-          newCallee = j.memberExpression.from({
-            ...path.node.callee,
-            property: j.identifier(toSingle(propertyName)),
-          });
-        }
-
-        // args
-        const newArgs: K.ExpressionKind[] = [];
-        args.forEach((a: any) => {
-          const includeUnit = units.includes(a.value);
-          if (includeUnit) {
-            needReplace = true;
-          }
-          newArgs.push(includeUnit ? j.literal(toSingle(a.value)) : a);
-        });
-
-        if (needReplace) {
-          replacement = j.callExpression.from({
-            ...path.node,
-            callee: newCallee,
-            arguments: newArgs,
-          });
-        }
-      }
+      replacement =
+        replaceObjectArgument(j, path) ||
+        replaceArrayArugment(j, path) ||
+        replaceUnitFunction(j, path);
     }
     if (path?.parentPath) {
       replaceParents(path.parentPath);
@@ -319,7 +328,10 @@ const transform: Transform = (file: FileInfo, api: API) => {
     .sort()
     .reverse()
     .forEach((p) => {
-      dImport?.insertAfter(
+      if (!dImport) {
+        return;
+      }
+      dImport.insertAfter(
         j.expressionStatement.from({
           expression: j.callExpression.from({
             callee: j.memberExpression.from({
@@ -358,7 +370,10 @@ const transform: Transform = (file: FileInfo, api: API) => {
       });
     });
 
-  return root.toSource({ quote: 'single' });
+  return root.toSource({
+    trailingComma: true,
+    quote: 'single',
+  });
 };
 
 export default transform;

@@ -9,25 +9,30 @@ const main = () => {
     day: 12,
   });
 
-  dayjs().add({
+  dayjs().set({
     day: 1,
   });
-  dayjs().add({
+  dayjs().set({
     day: 1,
+  });
+  dayjs().set({
+    year: 2010,
+    month: 1,
+    day: 12,
   });
   const num = 1;
-  dayjs().add({
+  dayjs().set({
     day: num,
   });
   const days = 1;
-  dayjs().add({
+  dayjs().set({
     day: days,
   });
 
-  dayjs().set({
+  dayjs().add({
     day: 1,
   });
-  dayjs().set({
+  dayjs().add({
     day: 1,
   });
 };
