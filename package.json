@@ -33,7 +33,6 @@
     "@types/moment": "^2.13.0",
     "@typescript-eslint/eslint-plugin": "^4.14.2",
     "@typescript-eslint/parser": "^4.14.2",
-    "ast-types": "^0.14.2",
     "dayjs": "^1.10.4",
     "eslint": "^7.19.0",
     "eslint-config-prettier": "^7.2.0",

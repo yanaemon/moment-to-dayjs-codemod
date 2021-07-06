@@ -1,5 +1,11 @@
-import { API, ASTPath, FileInfo, JSCodeshift, Transform } from 'jscodeshift';
-import * as K from 'ast-types/gen/kinds';
+import {
+  API,
+  ASTPath,
+  CallExpression,
+  FileInfo,
+  JSCodeshift,
+  Transform,
+} from 'jscodeshift';
 
 /**
  * @param str unit string
@@ -39,6 +45,13 @@ const includesProperties = (path: ASTPath<any>, properties: string[]) => {
   return properties.includes(propertyName);
 };
 
+/**
+ * before : xxx({ days: 1 })
+ * after  : xxx({ day: 1 })
+ * @param j JSCodeshift Object
+ * @param path ASTPath Object
+ * @returns return new node. return null if not need to replace.
+ */
 const replaceObjectArgument = (j: JSCodeshift, path: ASTPath<any>) => {
   const args = path.node?.arguments;
   if (!args?.[0]?.properties?.length) {
@@ -71,6 +84,13 @@ const replaceObjectArgument = (j: JSCodeshift, path: ASTPath<any>) => {
   });
 };
 
+/**
+ * before : xxx(1, 'days')
+ * after  : xxx(1, 'day')
+ * @param j JSCodeshift Object
+ * @param path ASTPath Object
+ * @returns return new node. return null if not need to replace.
+ */
 const replaceArrayArugment = (j: JSCodeshift, path: ASTPath<any>) => {
   const args = path.node?.arguments;
   if (!args?.length) {
@@ -93,6 +113,13 @@ const replaceArrayArugment = (j: JSCodeshift, path: ASTPath<any>) => {
   });
 };
 
+/**
+ * before : days()
+ * after  : day()
+ * @param j JSCodeshift Object
+ * @param path ASTPath Object
+ * @returns return new node. return null if not need to replace.
+ */
 const replaceUnitFunction = (j: JSCodeshift, path: ASTPath<any>) => {
   const propertyName = getPropertyName(path);
   if (!multipleUnits.includes(propertyName)) {
@@ -110,10 +137,45 @@ const replaceUnitFunction = (j: JSCodeshift, path: ASTPath<any>) => {
   });
 };
 
+/**
+ * before : get('days') / set('days', 1)
+ * after  : day() / day(1)
+ * @param j JSCodeshift Object
+ * @param path ASTPath Object
+ * @returns return new node. return null if not need to replace.
+ */
+const replaceGetSetToFunction = (j: JSCodeshift, path: ASTPath<any>) => {
+  const args = path.node?.arguments;
+  if (typeof args?.[0]?.value !== 'string') {
+    return null;
+  }
+
+  const propertyName = getPropertyName(path);
+  if (
+    (propertyName === 'get' && args.length !== 1) ||
+    (propertyName === 'set' && args.length !== 2)
+  ) {
+    return null;
+  }
+
+  const newCallee = j.memberExpression.from({
+    ...path.node.callee,
+    property: j.identifier(toSingle(args[0].value)),
+  });
+  const newArgs = args.slice(1);
+
+  return j.callExpression.from({
+    ...path.node,
+    callee: newCallee,
+    arguments: newArgs,
+  });
+};
+
 type Plugin = {
   name: string;
   properties?: string[];
   find?: (path: ASTPath<any>) => boolean;
+  replace?: (j: JSCodeshift, path: ASTPath<any>) => CallExpression | null;
   notImplemented?: boolean;
 };
 const plugins: Plugin[] = [
@@ -188,6 +250,7 @@ const plugins: Plugin[] = [
         ['weekday', 'weekdays'].includes(args?.[0]?.value)
       );
     },
+    replace: replaceGetSetToFunction,
   },
 ];
 
@@ -212,7 +275,7 @@ const transform: Transform = (file: FileInfo, api: API) => {
 
   const foundPlugins = new Set<string>();
   const checkPlugins = (path: ASTPath<any>) => {
-    plugins.forEach((plugin) => {
+    const newPlugins = plugins.filter((plugin) => {
       if (
         (plugin.properties && includesProperties(path, plugin.properties)) ||
         plugin?.find?.(path)
@@ -220,10 +283,11 @@ const transform: Transform = (file: FileInfo, api: API) => {
         if (plugin.notImplemented) {
           throw new Error(`Not implemented plugin '${plugin.name}' found.`);
         }
-        foundPlugins.add(plugin.name);
-        return;
+        return true;
       }
     });
+    newPlugins.forEach((p) => foundPlugins.add(p.name));
+    return newPlugins;
   };
 
   // replace import statement
@@ -275,8 +339,10 @@ const transform: Transform = (file: FileInfo, api: API) => {
     const type = path?.value?.type?.toString();
     let replacement: any = null;
     if (type === j.CallExpression.toString()) {
-      checkPlugins(path);
+      const plugins = checkPlugins(path);
+      const replaceByPlugin = plugins.find((p) => p.replace)?.replace;
       replacement =
+        replaceByPlugin?.(j, path) ||
         replaceObjectArgument(j, path) ||
         replaceArrayArugment(j, path) ||
         replaceUnitFunction(j, path);
