@@ -4,11 +4,27 @@ A [jscodeshift](https://github.com/facebook/jscodeshift) tranformer for migratin
 
 ## How to use
 
-```
-$ npm install -g jscodeshift
-$ git clone https://github.com/yanaemon/moment-to-dayjs-codemod.git
+```sh
+$ npm install -g jscodeshift moment-to-dayjs-codemod
 
-$ jscodeshift -t transform.ts --parser tsx path/to/file.ts
+# dry run
+$ jscodeshift -t node_modules/moment-to-dayjs-codemod/transform.js -d -p path/to/file.ts
+
+# exec
+$ jscodeshift -t node_modules/moment-to-dayjs-codemod/transform.js path/to/file.ts
+```
+
+local use
+```sh
+$ git clone https://github.com/yanaemon/moment-to-dayjs-codemod.git
+$ cd moment-to-dayjs-codemod
+$ npm install
+
+# dry run
+$ npm run-script transform -- -d -p path/to/file.ts
+
+# exec
+$ npm run-script transform -- path/to/file.ts
 ```
 
 ## Supported dayjs plugins
@@ -39,7 +55,6 @@ for (const d = moment(); d.add(1, 'date'); d++) {
   console.log(d.toDate());
 }
 ```
-
 
 #### variable assign
 

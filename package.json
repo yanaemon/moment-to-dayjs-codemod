@@ -10,7 +10,8 @@
   "license": "MIT",
   "scripts": {
     "build": "tsc transform.ts",
-    "test": "jest"
+    "test": "jest",
+    "transform": "jscodeshift -t transform.ts --parser tsx"
   },
   "keywords": [
     "moment",
