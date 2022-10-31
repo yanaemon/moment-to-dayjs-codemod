@@ -39,7 +39,7 @@ const multipleUnits = [
 const units = [...singleUnits, ...multipleUnits];
 
 const getPropertyName = (path: ASTPath<any>) =>
-  path.node?.callee?.property?.name;
+  path.node?.callee?.property?.name ?? path.node?.property?.name;
 const includesProperties = (path: ASTPath<any>, properties: string[]) => {
   const propertyName = getPropertyName(path);
   return properties.includes(propertyName);
@@ -192,6 +192,10 @@ const plugins: Plugin[] = [
     },
   },
   {
+    name: 'duration',
+    properties: ['duration', 'isDuration', 'humanize'],
+  },
+  {
     name: 'isBetween',
     properties: ['isBetween'],
   },
@@ -231,13 +235,17 @@ const plugins: Plugin[] = [
     },
   },
   {
+    name: 'relativeTime',
+    properties: ['from', 'fromNow', 'to', 'toNow', 'humanize'],
+  },
+  {
     name: 'updateLocale',
     properties: ['updateLocale'],
     notImplemented: true,
   },
   {
     name: 'utc',
-    properties: ['utc'],
+    properties: ['utc', 'local'],
   },
   {
     name: 'weekday',
@@ -311,6 +319,30 @@ const transform: Transform = (file: FileInfo, api: API) => {
       return d?.init?.callee?.name === 'require' && d?.id?.name === 'moment';
     })
     .replaceWith(dayjsImportDeclaration);
+
+  // before : moment.xxx().yyy()
+  // after  : dayjs.xxx().yyy()
+  root
+  .find(j.MemberExpression, {
+    object: { 
+      callee: {
+        object: { name: 'moment' },
+      }
+    },
+  })
+  .replaceWith((path: ASTPath<any>) => {
+    checkPlugins(path);
+    return j.memberExpression.from({
+      ...path.node,
+      object: {
+        ...path.node.object,
+        callee: {
+          ...path.node.object.callee,
+          object: j.identifier('dayjs'),
+        }
+      },
+    });
+  });
 
   // replace static function
   // before : moment.xxx()
