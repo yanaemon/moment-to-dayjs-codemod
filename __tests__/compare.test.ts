@@ -147,3 +147,14 @@ test.each([
 ])('weekday', (m, d) => {
   expect(d.toDate()).toEqual(m.toDate());
 });
+
+import duration from 'dayjs/plugin/duration';
+import relativeTime from 'dayjs/plugin/relativeTime';
+dayjs.extend(duration);
+dayjs.extend(relativeTime);
+
+test.each([
+  [moment.duration(100).humanize(), dayjs.duration(100).humanize()],
+])('humanize', (m, d) => {
+  expect(d).toBe(m);
+});

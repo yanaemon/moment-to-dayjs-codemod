@@ -9,6 +9,7 @@ const main = () => {
   dayjs.utc().isUTC();
   dayjs.utc().local().format();
   dayjs.utc('2018-01-01', 'YYYY-MM-DD');
+  dayjs().local();
 };
 
 main();

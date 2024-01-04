@@ -30,12 +30,14 @@ $ npm run-script transform -- path/to/file.ts
 ## Supported dayjs plugins
 
 - [x] [arraySupport](https://day.js.org/docs/en/plugin/array-support)
+- [x] [duration](https://day.js.org/docs/en/plugin/duration)
 - [x] [isBetween](https://day.js.org/docs/en/plugin/is-between)
 - [x] [isSameOrAfter](https://day.js.org/docs/en/plugin/is-same-or-after)
 - [x] [isSameOrBefore](https://day.js.org/docs/en/plugin/is-same-or-before)
 - [x] [isoWeek](https://day.js.org/docs/en/plugin/iso-week)
 - [x] [minMax](https://day.js.org/docs/en/plugin/min-max)
 - [x] [objectSupport](https://day.js.org/docs/en/plugin/object-support)
+- [x] [relativeTime](https://day.js.org/docs/en/plugin/relative-time)
 - [ ] [updateLocale](https://day.js.org/docs/en/plugin/update-locale)
 - [x] [utc](https://day.js.org/docs/en/plugin/utc)
 - [x] [weekday](https://day.js.org/docs/en/plugin/weekday)
